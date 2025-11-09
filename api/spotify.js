@@ -1,3 +1,5 @@
+// File: /api/spotify.js (UPDATED CODE)
+
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
@@ -24,16 +26,30 @@ const getAccessToken = async () => {
     }),
   });
 
-  return response.json();
+  const data = await response.json();
+
+  // ERROR CHECK
+  if (!response.ok) {
+    throw new Error(`Failed to get access token: ${data.error_description || 'Unknown error'}`);
+  }
+
+  return data;
 };
 
 const spotifyFetch = async (endpoint, method = 'GET', body = null) => {
-  const { access_token } = await getAccessToken();
-
+  let token;
+  try {
+     token = await getAccessToken();
+  } catch (error) {
+     // Agar token hi fail ho gaya (e.g., bad refresh token)
+     console.error(error.message);
+     throw new Error(`Spotify Auth Error: ${error.message}`);
+  }
+  
   const options = {
     method,
     headers: {
-      'Authorization': `Bearer ${access_token}`,
+      'Authorization': `Bearer ${token.access_token}`,
     },
   };
 
@@ -45,43 +61,57 @@ const spotifyFetch = async (endpoint, method = 'GET', body = null) => {
   return fetch(endpoint, options);
 };
 
+// --- Data Fetching Functions (Updated with error checks) ---
+
 const getNowPlaying = async () => {
   const response = await spotifyFetch(NOW_PLAYING_ENDPOINT);
   if (response.status === 204 || response.status > 400) {
     return { isPlaying: false, message: "Currently not playing." };
   }
   const song = await response.json();
-  if (!song.item) {
-    return { isPlaying: false, message: "Currently not playing (device inactive)." };
+  if (!song || !song.item) {
+     return { isPlaying: false, message: "Currently not playing (device inactive)." };
   }
   return {
     isPlaying: song.is_playing,
     title: song.item.name,
-    artist: song.item.artists.map((_artist) => _artist.name).join(', '),
-    album: song.item.album.name,
-    albumImageUrl: song.item.album.images[0]?.url,
-    songUrl: song.item.external_urls.spotify,
+    artist: song.item.artists?.map((_artist) => _artist.name).join(', ') || 'Unknown Artist', // Guard clause
+    songUrl: song.item.external_urls?.spotify,
   };
 };
 
 const getTopTracks = async () => {
   const response = await spotifyFetch(`${TOP_TRACKS_ENDPOINT}?limit=10&time_range=short_term`);
-  const { items } = await response.json();
-  return items.map((track) => ({
+  const data = await response.json();
+  
+  // YAHAN AAYA THA ERROR! Ab hum check kar rahe hain.
+  if (!data || !data.items) {
+     console.error("Error fetching top tracks:", data);
+     return { error: "Failed to fetch top tracks.", details: data };
+  }
+
+  return data.items.map((track) => ({
     title: track.name,
-    artist: track.artists.map((_artist) => _artist.name).join(', '),
-    songUrl: track.external_urls.spotify,
+    artist: track.artists?.map((_artist) => _artist.name).join(', ') || 'Unknown Artist',
+    songUrl: track.external_urls?.spotify,
     uri: track.uri,
   }));
 };
 
 const getFollowedArtists = async () => {
   const response = await spotifyFetch(`${FOLLOWED_ARTISTS_ENDPOINT}?type=artist&limit=20`);
-  const { artists } = await response.json();
-  return artists.items.map((artist) => ({
+  const data = await response.json();
+
+  // YAHAN BHI AA SAKTA THA ERROR!
+  if (!data || !data.artists || !data.artists.items) {
+      console.error("Error fetching followed artists:", data);
+      return { error: "Failed to fetch followed artists.", details: data };
+  }
+  
+  return data.artists.items.map((artist) => ({
     name: artist.name,
-    artistUrl: artist.external_urls.spotify,
-    imageUrl: artist.images[0]?.url,
+    artistUrl: artist.external_urls?.spotify,
+    imageUrl: artist.images?.[0]?.url,
   }));
 };
 
@@ -91,12 +121,11 @@ const pausePlayback = async () => {
 };
 
 const playTrack = async (uri) => {
-  const response = await spotifyFetch(PLAY_ENDPOINT, 'PUT', {
-    uris: [uri],
-  });
+  const response = await spotifyFetch(PLAY_ENDPOINT, 'PUT', { uris: [uri] });
   return response.status === 204;
 };
 
+// --- Main Handler ---
 export default async function handler(req, res) {
   try {
     const action = req.query.action;
@@ -106,7 +135,6 @@ export default async function handler(req, res) {
       await pausePlayback();
       return res.status(200).json({ status: 'paused' });
     }
-
     if (action === 'play' && uri) {
       await playTrack(uri);
       return res.status(200).json({ status: 'playing', uri: uri });
@@ -124,8 +152,10 @@ export default async function handler(req, res) {
       topTracks,
       followedArtists,
     });
+
   } catch (error) {
-    console.error(error.message);
-    return res.status(500).json({ error: 'Server par kuch galat hua.' });
+    // Naya, behtar error message
+    console.error("Root handler error:", error.message);
+    return res.status(500).json({ error: 'Server par kuch galat hua.', details: error.message });
   }
 }
