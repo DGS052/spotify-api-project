@@ -8,8 +8,10 @@ const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
 // Hum ab poore, original URLs ka istemaal kar rahe hain
 const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
+// --- YEH DO LINES BADAL DI HAIN ---
 const TOP_TRACKS_ENDPOINT = `https://api.spotify.com/v1/me/top/tracks?limit=10?limit=10&time_range=short_term`;
 const FOLLOWED_ARTISTS_ENDPOINT = `https://api.spotify.com/v1/me/following?type=artist?type=artist&limit=20`;
+// ----------------------------------
 const PAUSE_ENDPOINT = `https://api.spotify.com/v1/me/player/pause`;
 const PLAY_ENDPOINT = `https://api.spotify.com/v1/me/player/play`;
 
@@ -69,6 +71,7 @@ const getNowPlaying = async () => {
 };
 
 const getTopTracks = async () => {
+  // Call ab simple hai, query params URL mein hi hain
   const response = await spotifyFetch(TOP_TRACKS_ENDPOINT); 
   const data = await response.json();
   if (!data || !data.items) {
@@ -84,6 +87,7 @@ const getTopTracks = async () => {
 };
 
 const getFollowedArtists = async () => {
+  // Call ab simple hai, query params URL mein hi hain
   const response = await spotifyFetch(FOLLOWED_ARTISTS_ENDPOINT);
   const data = await response.json();
   if (!data || !data.artists || !data.artists.items) {
