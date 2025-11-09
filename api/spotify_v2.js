@@ -1,4 +1,4 @@
-// FINAL CODE - 1:21 PM
+// FINAL CODE - 1:33 PM
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
@@ -84,7 +84,7 @@ const getFollowedArtists = async () => {
   }
   return data.artists.items.map((artist) => ({
     name: artist.name,
-    artistUrl: artist.external_urls?.spotify, // Bug fix yahan tha
+    artistUrl: artist.external_urls?.spotify,
     imageUrl: artist.images?.[0]?.url,
   }));
 };
