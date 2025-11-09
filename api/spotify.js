@@ -1,20 +1,15 @@
-// File: /api/spotify.js (FINAL CODE V3)
-// Cache bust v3
-
+// FINAL CACHE BUST - 1:06 PM
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
 
-// --- Step 2: Spotify API ke poore URLs (FIXED!) ---
 const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
-const TOP_TRACKS_ENDPOINT = `https://api.spotify.com/v1/me/top/tracks?limit=10?limit=10&time_range=short_term`; // Includes query params
-const FOLLOWED_ARTISTS_ENDPOINT = `https://api.spotify.com/v1/me/following?type=artist?type=artist&limit=20`; // Includes query params
+const TOP_TRACKS_ENDPOINT = `https://api.spotify.com/v1/me/top/tracks?limit=10?limit=10&time_range=short_term`;
+const FOLLOWED_ARTISTS_ENDPOINT = `https://api.spotify.com/v1/me/following?type=artist?type=artist&limit=20`;
 const PAUSE_ENDPOINT = `https://api.spotify.com/v1/me/player/pause`;
 const PLAY_ENDPOINT = `https://api.spotify.com/v1/me/player/play`;
 
-
-// --- Access Token Function (Yeh sahi hai) ---
 const getAccessToken = async () => {
   const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
   const response = await fetch(TOKEN_ENDPOINT, {
@@ -29,7 +24,6 @@ const getAccessToken = async () => {
   return data;
 };
 
-// --- Spotify Fetch Helper (Yeh sahi hai) ---
 const spotifyFetch = async (endpoint, method = 'GET', body = null) => {
   let token;
   try {
@@ -49,8 +43,6 @@ const spotifyFetch = async (endpoint, method = 'GET', body = null) => {
   return fetch(endpoint, options);
 };
 
-// --- Data Fetching Functions (Yeh sahi hain) ---
-
 const getNowPlaying = async () => {
   const response = await spotifyFetch(NOW_PLAYING_ENDPOINT);
   if (response.status === 204 || response.status > 400) {
@@ -69,7 +61,6 @@ const getNowPlaying = async () => {
 };
 
 const getTopTracks = async () => {
-  // Call ab simple hai, query params URL mein hi hain
   const response = await spotifyFetch(TOP_TRACKS_ENDPOINT); 
   const data = await response.json();
   if (!data || !data.items) {
@@ -85,7 +76,6 @@ const getTopTracks = async () => {
 };
 
 const getFollowedArtists = async () => {
-  // Call ab simple hai, query params URL mein hi hain
   const response = await spotifyFetch(FOLLOWED_ARTISTS_ENDPOINT);
   const data = await response.json();
   if (!data || !data.artists || !data.artists.items) {
@@ -109,7 +99,6 @@ const playTrack = async (uri) => {
   return response.status === 204;
 };
 
-// --- Main Handler (Yeh sahi hai) ---
 export default async function handler(req, res) {
   try {
     const action = req.query.action;
