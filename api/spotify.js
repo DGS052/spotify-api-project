@@ -1,7 +1,11 @@
+// File: /api/spotify.js (FINAL, FINAL CODE - No Short URLs)
+
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
 
+// --- Step 2: Spotify API ke poore URLs ---
+// Hum ab poore URLs ka istemaal kar rahe hain
 const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
 const TOP_TRACKS_ENDPOINT = `https://api.spotify.com/v1/me/top/tracks?limit=10?limit=10&time_range=short_term`;
@@ -9,6 +13,8 @@ const FOLLOWED_ARTISTS_ENDPOINT = `https://api.spotify.com/v1/me/following?type=
 const PAUSE_ENDPOINT = `https://api.spotify.com/v1/me/player/pause`;
 const PLAY_ENDPOINT = `https://api.spotify.com/v1/me/player/play`;
 
+
+// --- Access Token Function (Yeh sahi hai) ---
 const getAccessToken = async () => {
   const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
   const response = await fetch(TOKEN_ENDPOINT, {
@@ -23,13 +29,14 @@ const getAccessToken = async () => {
   return data;
 };
 
+// --- Spotify Fetch Helper (Yeh sahi hai) ---
 const spotifyFetch = async (endpoint, method = 'GET', body = null) => {
   let token;
   try {
-    token = await getAccessToken();
+     token = await getAccessToken();
   } catch (error) {
-    console.error(error.message);
-    throw new Error(`Spotify Auth Error: ${error.message}`);
+     console.error(error.message);
+     throw new Error(`Spotify Auth Error: ${error.message}`);
   }
   const options = {
     method,
@@ -42,6 +49,8 @@ const spotifyFetch = async (endpoint, method = 'GET', body = null) => {
   return fetch(endpoint, options);
 };
 
+// --- Data Fetching Functions (Yeh sahi hain) ---
+
 const getNowPlaying = async () => {
   const response = await spotifyFetch(NOW_PLAYING_ENDPOINT);
   if (response.status === 204 || response.status > 400) {
@@ -49,7 +58,7 @@ const getNowPlaying = async () => {
   }
   const song = await response.json();
   if (!song || !song.item) {
-    return { isPlaying: false, message: "Currently not playing (device inactive)." };
+     return { isPlaying: false, message: "Currently not playing (device inactive)." };
   }
   return {
     isPlaying: song.is_playing,
@@ -60,11 +69,11 @@ const getNowPlaying = async () => {
 };
 
 const getTopTracks = async () => {
-  const response = await spotifyFetch(TOP_TRACKS_ENDPOINT);
+  const response = await spotifyFetch(TOP_TRACKS_ENDPOINT); 
   const data = await response.json();
   if (!data || !data.items) {
-    console.error("Error fetching top tracks:", data);
-    return { error: "Failed to fetch top tracks.", details: data };
+     console.error("Error fetching top tracks:", data);
+     return { error: "Failed to fetch top tracks.", details: data };
   }
   return data.items.map((track) => ({
     title: track.name,
@@ -78,8 +87,8 @@ const getFollowedArtists = async () => {
   const response = await spotifyFetch(FOLLOWED_ARTISTS_ENDPOINT);
   const data = await response.json();
   if (!data || !data.artists || !data.artists.items) {
-    console.error("Error fetching followed artists:", data);
-    return { error: "Failed to fetch followed artists.", details: data };
+      console.error("Error fetching followed artists:", data);
+      return { error: "Failed to fetch followed artists.", details: data };
   }
   return data.artists.items.map((artist) => ({
     name: artist.name,
@@ -98,6 +107,7 @@ const playTrack = async (uri) => {
   return response.status === 204;
 };
 
+// --- Main Handler (Yeh sahi hai) ---
 export default async function handler(req, res) {
   try {
     const action = req.query.action;
@@ -124,6 +134,7 @@ export default async function handler(req, res) {
       topTracks,
       followedArtists,
     });
+
   } catch (error) {
     console.error("Root handler error:", error.message);
     return res.status(500).json({ error: 'Server par kuch galat hua.', details: error.message });
